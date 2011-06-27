@@ -1,7 +1,7 @@
 #!/usr/bin/env tclsh
 
-set database [lindex $argv 0]
-set action   [lindex $argv 1]
+set action   [lindex $argv 0]
+set database [lindex $argv 1]
 
 if { $database == "" } {
   set action help
@@ -96,6 +96,7 @@ proc get_link_target {sourcefile target} {
 }
 
 switch -exact -- $action {
+  install -
   link {
     if {[lindex $argv 2] != "-n"} { set do_things 1 } else { set do_things 0 }
     read_database $database
@@ -186,30 +187,31 @@ switch -exact -- $action {
     read_database $database
   }
   default {
-    puts "Usage: $argv0 database action ..."
+    puts "Usage: $argv0 action database ..."
     puts ""
     puts " actions:"
     puts ""
     puts "    help"
     puts "        This help"
     puts ""
-    puts "    link \[-n\]"
+    puts "    install DATABASE \[-n\]"
+    puts "    link DATABASE \[-n\]"
     puts "        Create links from the current directory to the directory"
     puts "        of the database of the link files"
     puts "        -n  don't do anything"
     puts ""
-    puts "    clean \[-n\]"
+    puts "    clean DATABASE \[-n\]"
     puts "        Delete noisy files"
     puts "        -n  only list existing noisy files, like noisy"
     puts ""
-    puts "    noisy \[-a\]"
+    puts "    noisy DATABASE \[-a\]"
     puts "        List existing noisy files"
     puts "        -a  list all noisy files, even those that don't exist"
     puts ""
-    puts "    unknown"
+    puts "    unknown DATABASE"
     puts "        List unknown files in the current directory"
     puts ""
-    puts "    run \[-v\]"
+    puts "    run DATABASE \[-v\]"
     puts "        Only run the database"
     puts "        -v  verbose mode"
     puts ""
