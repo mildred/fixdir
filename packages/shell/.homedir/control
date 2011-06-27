@@ -1,0 +1,14 @@
+package: shell-common
+priority: normal
+maintainer: Christian Höltje <docwhat@gerf.org>
+depends: 
+standards-version: 1
+description: Common Shell Framework
+ This is the framework that allows a lot of the shells (zsh, bash,
+ more?) to work in parts.
+dirs:
+ .local
+ .local/bin
+ .shell
+mkdirs:
+ .shell

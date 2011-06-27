@@ -6,17 +6,29 @@ set database    ""
 set databasedir ""
 set installdir  [pwd]
 
-proc db_link {ip a b} {
+proc db_link {ip a b {c ""}} {
   global files verbose databasedir
-  dict set files [file dirname $a] ignore 1
-  dict set files $a link [file join $databasedir $b]
-  if $verbose { puts [list copy $a $b] }
+  if { $a == "-in" } {
+    foreach f $c {
+      db_link $ip [file join $b [file tail $f]] $f
+    }
+  } else {
+    dict set files [file dirname $a] ignore 1
+    dict set files $a link [file join $databasedir $b]
+    if $verbose { puts [list copy $a $b] }
+  }
 }
-proc db_copy {ip a b} {
+proc db_copy {ip a b {c ""}} {
   global files verbose databasedir
-  dict set files [file dirname $a] ignore 1
-  dict set files $a copy [file join $databasedir $b]
-  if $verbose { puts [list link $a $b] }
+  if { $a == "-in" } {
+    foreach f $c {
+      db_copy $ip [file join $b [file tail $f]] $f
+    }
+  } else {
+    dict set files [file dirname $a] ignore 1
+    dict set files $a copy [file join $databasedir $b]
+    if $verbose { puts [list link $a $b] }
+  }
 }
 proc db_noisy {ip a} {
   global files verbose
@@ -35,6 +47,7 @@ proc db_ignore {ip a} {
 proc db_database {ip dbfile} {
   global databasedir
   set databasedir [file dirname $dbfile]
+  interp eval $ip set pkgdir $databasedir
   interp eval $ip source $dbfile
 }
 
@@ -163,7 +176,7 @@ switch -exact -- [lindex $argv 0] {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
         -n      { set do_things  0 }
-        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        -t      { incr i 1 ; set installdir [lindex $argv $i] }
         default { set database   $arg }
       }
     }
@@ -220,7 +233,7 @@ switch -exact -- [lindex $argv 0] {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
         -n      { set do_things  0 }
-        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        -t      { incr i 1 ; set installdir [lindex $argv $i] }
         default { set database   $arg }
       }
     }
@@ -245,11 +258,10 @@ switch -exact -- [lindex $argv 0] {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
         -a      { set list_all  1 }
-        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        -t      { incr i 1 ; set installdir [lindex $argv $i] }
         default { set database  $arg }
       }
     }
-    cd $installdir
     read_database $database
     dict for {sourcefile v} $files {
       if [dict exists $v noisy] {
@@ -268,12 +280,11 @@ switch -exact -- [lindex $argv 0] {
     for {set i 1} {$i < [llength $argv]} {incr i} {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
-        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        -t      { incr i 1 ; set installdir [lindex $argv $i] }
         -r      { set raw 1 }
         default { set database  $arg }
       }
     }
-    cd $installdir
     read_database $database
     if $raw {
       puts $files
@@ -308,11 +319,10 @@ switch -exact -- [lindex $argv 0] {
     for {set i 1} {$i < [llength $argv]} {incr i} {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
-        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        -t      { incr i 1 ; set installdir [lindex $argv $i] }
         default { set database  $arg }
       }
     }
-    cd $installdir
     read_database $database
     set all_files [concat [glob -nocomplain *] [glob -type hidden -nocomplain *]]
     foreach item $all_files {
@@ -331,11 +341,10 @@ switch -exact -- [lindex $argv 0] {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
         -v      { set verbose   1 }
-        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        -t      { incr i 1 ; set installdir [lindex $argv $i] }
         default { set database  $arg }
       }
     }
-    cd $installdir
     read_database $database
   }
   

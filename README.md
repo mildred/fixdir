@@ -36,4 +36,5 @@ TODO
 ====
 
 * implement uninstall
+* fix -t option
 
