@@ -1,0 +1,406 @@
+#!/usr/bin/env tclsh
+
+set files       ""
+set verbose     0
+set database    ""
+set databasedir ""
+set installdir  [pwd]
+
+proc db_link {ip a b} {
+  global files verbose databasedir
+  dict set files [file dirname $a] ignore 1
+  dict set files $a link [file join $databasedir $b]
+  if $verbose { puts [list copy $a $b] }
+}
+proc db_copy {ip a b} {
+  global files verbose databasedir
+  dict set files [file dirname $a] ignore 1
+  dict set files $a copy [file join $databasedir $b]
+  if $verbose { puts [list link $a $b] }
+}
+proc db_noisy {ip a} {
+  global files verbose
+  foreach i $a {
+    dict set files $i noisy 1
+    if $verbose { puts [list noisy $i] }
+  }
+}
+proc db_ignore {ip a} {
+  global files verbose
+  foreach i $a {
+    dict set files $i ignore 1
+    if $verbose { puts [list ignore $i] }
+  }
+}
+proc db_database {ip dbfile} {
+  global databasedir
+  set databasedir [file dirname $dbfile]
+  interp eval $ip source $dbfile
+}
+
+proc read_database {database} {
+  set i [interp create]
+  interp alias $i link     {} db_link     $i
+  interp alias $i copy     {} db_copy     $i
+  interp alias $i noisy    {} db_noisy    $i
+  interp alias $i ignore   {} db_ignore   $i
+  interp alias $i database {} db_database $i
+  if { $database != "" } {
+    db_database $i $database
+  } elseif { [file exists ".fixdir" ] } {
+    db_database $i ".fixdir"
+  }
+  return $i
+}
+
+proc clean_path {path} {
+  set clean ""
+  foreach item [file split $path] {
+    if {$item == "."} {
+      continue
+    } elseif {$item == ".."} {
+      if {[lindex $clean end] != ".." && [llength $clean]} {
+        # remove last element
+        set clean [lreplace $clean end end]
+      } else {
+        lappend clean ".."
+      }
+    } else {
+      lappend clean $item
+    }
+    return [file join $clean]
+  }
+}
+
+proc get_link_target {sourcefile target} {
+  set sourcedir [file dirname $sourcefile]
+  if { [file pathtype $target] == "relative" } {
+    if {$sourcedir != "."} {
+      set reverse ""
+      set fail 0
+      foreach item [file split $sourcedir] {
+        if {$item == "."} {
+          continue
+        } elseif {$item == ".."} {
+          set fail 1
+          break
+        } else {
+          lappend reverse ".."
+        }
+      }
+      if $fail {
+        # Can't compute reverse path
+        set sourcetarget [file normalize $target]
+      } else {
+        set sourcetarget [file join {*}$reverse $target]
+      }
+    } else {
+      # no directory component in source
+      set sourcetarget $target
+    }
+  }
+  return $sourcetarget
+}
+
+
+proc database_add {db} {
+  if { $db != "" } {
+    set found 0
+    if [file exists ".fixdir"] {
+      set f [open ".fixdir"]
+      while {[gets $f line] >= 0} {
+        if { [lindex $line 0] == "database" && [lindex $line 1] == $db } {
+          set found 1
+          break
+        }
+      }
+      catch {close $f}
+    }
+    if { ! [file exists ".fixdir"] } {
+      set f [open ".fixdir" a]
+      puts $f [list ignore ".fixdir"]
+      catch {close $f}
+    }
+    if { ! $found } {
+      set f [open ".fixdir" a]
+      puts $f [list database $db]
+      catch {close $f}
+    }
+  }
+}
+
+
+proc database_del {db} {
+  if { $db != "" } {
+    set found 0
+    set f [open ".fixdir"]
+    set all_config ""
+    while {[gets $f line] >= 0} {
+      if { [lindex $line 0] == "database" && [lindex $line 1] == $db } {
+      } else {
+        set all_config [concat $all_config $line "\n"]
+      }
+    }
+    catch {close $f}
+    if { ! $found } {
+      set f [open ".fixdir" w]
+      puts -nonewline $f $all_config
+      catch {close $f}
+    }
+  }
+}
+
+
+
+switch -exact -- [lindex $argv 0] {
+
+
+
+  install -
+  link {
+    set do_things 1
+    for {set i 1} {$i < [llength $argv]} {incr i} {
+      set arg [lindex $argv $i]
+      switch -exact -- $arg {
+        -n      { set do_things  0 }
+        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        default { set database   $arg }
+      }
+    }
+    read_database $database
+    if $do_things { database_add $database }
+    dict for {sourcefile v} $files {
+      if [dict exists $v link] {
+        set destfile [dict get $v link]
+        set n_target [file normalize $destfile]
+        if { ! [file exists $destfile] } {
+          if [file exists $sourcefile] {
+            puts "Move:     $sourcefile -> $destfile"
+            if $do_things {
+              file mkdir [file dirname $destfile]
+              file rename $sourcefile $destfile
+            }
+          } else {
+            continue
+          }
+        }
+        if { ! [catch {set srctarget [file link $sourcefile]}]} then {
+          set srctarget [file join [file dirname $sourcefile] $srctarget]
+          set n_srctarget [file normalize $srctarget]
+          if { $n_srctarget != $n_target} {
+            puts "Existing: $sourcefile -> $destfile"
+          }
+          # else the link is already ok
+        } elseif [file exists $sourcefile] {
+          puts "Existing: $sourcefile"
+        } else {
+          set sourcetarget [get_link_target $sourcefile $destfile]
+          puts "Create:   $sourcefile -> $sourcetarget"
+          if $do_things {
+            file mkdir [file dirname $sourcefile]
+            file link $sourcefile $sourcetarget
+          }
+        }
+      } elseif [dict exists $v copy] {
+        set destfile [dict get $v copy]
+        set n_target [file normalize $destfile]
+        if { ! [file exists $sourcefile] } {
+          puts "Copy:     $destfile -> $sourcefile"
+          file copy $n_target $sourcefile
+        }
+      }
+    }
+  }
+  
+  
+  
+  clean {
+    set do_things 1
+    for {set i 1} {$i < [llength $argv]} {incr i} {
+      set arg [lindex $argv $i]
+      switch -exact -- $arg {
+        -n      { set do_things  0 }
+        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        default { set database   $arg }
+      }
+    }
+    read_database $database
+    dict for {sourcefile v} $files {
+      if [dict exists $v noisy] {
+        if [file exists $sourcefile] {
+          puts $sourcefile
+          if $do_things {
+            file delete -force -- $sourcefile
+          }
+        }
+      }
+    }
+  }
+  
+  
+  
+  noisy {
+    set list_all 0
+    for {set i 1} {$i < [llength $argv]} {incr i} {
+      set arg [lindex $argv $i]
+      switch -exact -- $arg {
+        -a      { set list_all  1 }
+        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        default { set database  $arg }
+      }
+    }
+    cd $installdir
+    read_database $database
+    dict for {sourcefile v} $files {
+      if [dict exists $v noisy] {
+        if {$list_all || [file exists $sourcefile]} {
+          puts $sourcefile
+        }
+      }
+    }
+  }
+  
+  
+  
+  list {
+    set do_things 1
+    set raw 0
+    for {set i 1} {$i < [llength $argv]} {incr i} {
+      set arg [lindex $argv $i]
+      switch -exact -- $arg {
+        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        -r      { set raw 1 }
+        default { set database  $arg }
+      }
+    }
+    cd $installdir
+    read_database $database
+    if $raw {
+      puts $files
+    } else {
+
+      dict for {sourcefile v} $files {
+        if [dict exists $v noisy] {
+          puts "Noisy:    $sourcefile"
+        }
+        if [dict exists $v ignore] {
+          puts "Ignore:   $sourcefile"
+        }
+        if [dict exists $v link] {
+          set destfile [dict get $v link]
+          set n_target [file normalize $destfile]
+          set sourcetarget [get_link_target $sourcefile $destfile]
+          puts "Link:     $sourcefile -> $sourcetarget"
+        }
+        if [dict exists $v copy] {
+          set destfile [dict get $v copy]
+          set n_target [file normalize $destfile]
+          puts "Copy:     $sourcefile <- $destfile"
+        }
+      }
+    }
+  }
+  
+  
+  
+  unknown {
+    set do_things 1
+    for {set i 1} {$i < [llength $argv]} {incr i} {
+      set arg [lindex $argv $i]
+      switch -exact -- $arg {
+        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        default { set database  $arg }
+      }
+    }
+    cd $installdir
+    read_database $database
+    set all_files [concat [glob -nocomplain *] [glob -type hidden -nocomplain *]]
+    foreach item $all_files {
+      if {$item == "." || $item == ".."} { continue }
+      if {![dict exists $files $item]} {
+        puts $item
+      }
+    }
+  }
+  
+  
+  
+  run {
+    set do_things 1
+    for {set i 1} {$i < [llength $argv]} {incr i} {
+      set arg [lindex $argv $i]
+      switch -exact -- $arg {
+        -v      { set verbose   1 }
+        -t      { incr 1 ; set installdir [lindex $argv $i] }
+        default { set database  $arg }
+      }
+    }
+    cd $installdir
+    read_database $database
+  }
+  
+  
+  
+  
+  default {
+    puts "Usage: $argv0 action database ..."
+    puts ""
+    puts " actions:"
+    puts ""
+    puts "    help"
+    puts "        This help"
+    puts ""
+    puts "    install \[OPTS\] \[DATABASE\]"
+    puts "    link    \[OPTS\] \[DATABASE\]"
+    puts "        Create links from the current directory to the directory"
+    puts "        of the database of the link files"
+    puts "        -n  don't do anything"
+    puts "        -t  TARGETDIR"
+    puts ""
+    puts "    clean \[OPTS\] \[DATABASE\]"
+    puts "        Delete noisy files"
+    puts "        -n  only list existing noisy files, like noisy"
+    puts "        -t  TARGETDIR"
+    puts ""
+    puts "    noisy \[OPTS\] \[DATABASE\]"
+    puts "        List existing noisy files"
+    puts "        -a  list all noisy files, even those that don't exist"
+    puts "        -t  TARGETDIR"
+    puts ""
+    puts "    list \[OPTS\] \[DATABASE\]"
+    puts "        List the content of the database"
+    puts "        -r  raw"
+    puts "        -t  TARGETDIR"
+    puts ""
+    puts "    unknown \[OPTS\] \[DATABASE\]"
+    puts "        List unknown files in the current directory"
+    puts "        -t  TARGETDIR"
+    puts ""
+    puts "    run \[OPTS\] \[DATABASE\]"
+    puts "        Only run the database"
+    puts "        -v  verbose mode"
+    puts "        -t  TARGETDIR"
+    puts ""
+    puts " database format:"
+    puts ""
+    puts "    The database is a tcl file with the following available commands:"
+    puts ""
+    puts "    link A B"
+    puts "        make a link from file A (target dir) pointing to B (database"
+    puts "        dir)"
+    puts ""
+    puts "    copy A B"
+    puts "        copy the file B from database to A in the target directory"
+    puts ""
+    puts "    noisy F"
+    puts "        declare the file F as noisy (current dir). Noisy files are"
+    puts "        those which keep reappearing and you want to clean easily"
+    puts "        using the clean command."
+    puts ""
+    puts "    ignore F"
+    puts "        ignore F in all actions. Don't list it in the unknown files."
+    puts ""
+  }
+}
+
+

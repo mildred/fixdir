@@ -1,3 +1,3 @@
 
-link ".local/bin/fixdir" "fix.tcl"
+link ".local/bin/fixdir" "fixdir"
 
