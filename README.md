@@ -19,8 +19,7 @@ How to install it?
 How does it work
 ================
 
-You must always be in your homedir. The target directory for `fixdir` is
-always the current directory unless you specify it on the command line.
+`fixdir` works better when you are in your target directory (homedir)
 
 Invoke one action with a database file. The database file is a tcl script that
 contain all files and directories that should be linked.
@@ -32,9 +31,8 @@ What else can it do?
 
 `fixdir clean` remove files declared as noisy
 
-TODO
+Bugs
 ====
 
-* implement uninstall
-* fix -t option
+* fixdir list doesn't work when pwd != target directory
 
