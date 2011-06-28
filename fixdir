@@ -383,7 +383,7 @@ switch -exact -- [lindex $argv 0] {
         if [dict exists $v link] {
           set destfile [dict get $v link]
           set sourcetarget [get_link_target $sourcefile $destfile]
-          puts "Link:      $sourcefile -> $sourcetarget ($destfile)"
+          puts "Link:      $sourcefile -> $sourcetarget"
         }
         if [dict exists $v copy] {
           set destfile [dict get $v copy]
