@@ -4,51 +4,75 @@ set files       ""
 set verbose     0
 set database    ""
 set databasedir ""
-set installdir  [pwd]
+set installdir  $env(HOME)
+set databases   ""
 
 proc db_link {ip a b {c ""}} {
-  global files verbose databasedir
+  global files verbose databasedir installdir database databases
   if { $a == "-in" } {
     foreach f $c {
       db_link $ip [file join $b [file tail $f]] $f
     }
   } else {
-    dict set files [file dirname $a] ignore 1
-    dict set files $a link [file join $databasedir $b]
-    if $verbose { puts [list copy $a $b] }
+    set installed [file join $installdir $a]
+    set packaged  [file join $databasedir $b]
+    dict set files [file dirname $installed] ignore 1
+    dict set files $installed link $packaged
+    dict set databases $database $installed 1
+    if $verbose { puts [list link $installed $packaged] }
   }
 }
 proc db_copy {ip a b {c ""}} {
-  global files verbose databasedir
+  global files verbose databasedir installdir database databases
   if { $a == "-in" } {
     foreach f $c {
       db_copy $ip [file join $b [file tail $f]] $f
     }
   } else {
-    dict set files [file dirname $a] ignore 1
-    dict set files $a copy [file join $databasedir $b]
-    if $verbose { puts [list link $a $b] }
+    set installed [file join $installdir $a]
+    set packaged  [file join $databasedir $b]
+    dict set files [file dirname $installed] ignore 1
+    dict set files $installed copy $packaged
+    dict set databases $database $installed 1
+    if $verbose { puts [list copy $installed $packaged] }
   }
 }
 proc db_noisy {ip a} {
-  global files verbose
+  global files verbose installdir database databases
   foreach i $a {
-    dict set files $i noisy 1
-    if $verbose { puts [list noisy $i] }
+    set installed [file join $installdir $i]
+    dict set files $installed noisy 1
+    dict set databases $database $installed 1
+    if $verbose { puts [list noisy $installed] }
   }
 }
 proc db_ignore {ip a} {
-  global files verbose
+  global files verbose installdir database databases
   foreach i $a {
-    dict set files $i ignore 1
-    if $verbose { puts [list ignore $i] }
+    set installed [file join $installdir $i]
+    dict set files $installed ignore 1
+    dict set databases $database $installed 1
+    if $verbose { puts [list ignore $installed] }
   }
 }
 proc db_database {ip dbfile} {
-  global databasedir
-  set databasedir [file dirname $dbfile]
-  interp eval $ip set pkgdir $databasedir
-  interp eval $ip source $dbfile
+  global database databasedir installdir verbose files databases
+  if [file isdirectory $dbfile] {
+    set dbdir  $dbfile
+    set dbfile [file join $dbdir ".fixdir"]
+    if {! [file isfile $dbfile]} { set dbfile [file join $dbdir "hpkg.tcl"] }
+  }
+  if {[file isfile $dbfile]} {
+    set old_database $database
+    set database $dbfile
+    set databasedir [file dirname $database]
+    if $verbose { puts [list database $installed] }
+    interp eval $ip set pkgdir $databasedir
+    interp eval $ip set installdir $installdir
+    interp eval $ip source $dbfile
+    set database $old_database
+    set databasedir [file dirname $database]
+  }
 }
 
 proc read_database {database} {
@@ -58,11 +82,8 @@ proc read_database {database} {
   interp alias $i noisy    {} db_noisy    $i
   interp alias $i ignore   {} db_ignore   $i
   interp alias $i database {} db_database $i
-  if { $database != "" } {
-    db_database $i $database
-  } elseif { [file exists ".fixdir" ] } {
-    db_database $i ".fixdir"
-  }
+  if { $database == "" } { set database "." }
+  db_database $i $database
   return $i
 }
 
@@ -86,41 +107,31 @@ proc clean_path {path} {
 }
 
 proc get_link_target {sourcefile target} {
-  set sourcedir [file dirname $sourcefile]
-  if { [file pathtype $target] == "relative" } {
-    if {$sourcedir != "."} {
-      set reverse ""
-      set fail 0
-      foreach item [file split $sourcedir] {
-        if {$item == "."} {
-          continue
-        } elseif {$item == ".."} {
-          set fail 1
-          break
-        } else {
-          lappend reverse ".."
-        }
-      }
-      if $fail {
-        # Can't compute reverse path
-        set sourcetarget [file normalize $target]
-      } else {
-        set sourcetarget [file join {*}$reverse $target]
-      }
-    } else {
-      # no directory component in source
-      set sourcetarget $target
-    }
+  # Compute path relative to sourcefile that leads to target
+  # The sourcefile's directory and the target must exist in the filesystem.
+  # Split both paths
+  set sourcedir [file split [file normalize [file dirname $sourcefile]]]
+  set target    [file split [file normalize $target]]
+  # Remove common prefix
+  while {  [llength $sourcedir] && [llength $target]
+        && [lindex $sourcedir 0] == [lindex $target 0] } {
+    set sourcedir [lrange $sourcedir 1 end]
+    set target    [lrange $target    1 end]
   }
-  return $sourcetarget
+  # Build link
+  set back {}
+  if [llength $sourcedir] {set back [lrepeat [llength $sourcedir] ".."]}
+  return [file join {*}[concat $back $target]]
 }
 
 
-proc database_add {db} {
+proc database_add {installdir db} {
+  set rootdbfile [file join $installdir ".fixdir"]
+  set db [get_link_target $rootdbfile $db]
   if { $db != "" } {
     set found 0
-    if [file exists ".fixdir"] {
-      set f [open ".fixdir"]
+    if [file exists $rootdbfile] {
+      set f [open $rootdbfile]
       while {[gets $f line] >= 0} {
         if { [lindex $line 0] == "database" && [lindex $line 1] == $db } {
           set found 1
@@ -129,13 +140,13 @@ proc database_add {db} {
       }
       catch {close $f}
     }
-    if { ! [file exists ".fixdir"] } {
-      set f [open ".fixdir" a]
+    if { ! [file exists $rootdbfile] } {
+      set f [open $rootdbfile a]
       puts $f [list ignore ".fixdir"]
       catch {close $f}
     }
     if { ! $found } {
-      set f [open ".fixdir" a]
+      set f [open $rootdbfile a]
       puts $f [list database $db]
       catch {close $f}
     }
@@ -143,20 +154,22 @@ proc database_add {db} {
 }
 
 
-proc database_del {db} {
+proc database_del {installdir db} {
+  set rootdbfile [file join $installdir ".fixdir"]
+  set db [get_link_target $rootdbfile $db]
   if { $db != "" } {
     set found 0
-    set f [open ".fixdir"]
+    set f [open $rootdbfile]
     set all_config ""
     while {[gets $f line] >= 0} {
       if { [lindex $line 0] == "database" && [lindex $line 1] == $db } {
       } else {
-        set all_config [concat $all_config $line "\n"]
+        set all_config "$all_config$line\n"
       }
     }
     catch {close $f}
     if { ! $found } {
-      set f [open ".fixdir" w]
+      set f [open $rootdbfile w]
       puts -nonewline $f $all_config
       catch {close $f}
     }
@@ -175,53 +188,116 @@ switch -exact -- [lindex $argv 0] {
     for {set i 1} {$i < [llength $argv]} {incr i} {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
+        -v      { incr verbose }
+        -t      { incr i 1 ; set installdir [file normalize [lindex $argv $i]] }
         -n      { set do_things  0 }
-        -t      { incr i 1 ; set installdir [lindex $argv $i] }
         default { set database   $arg }
       }
     }
     read_database $database
-    if $do_things { database_add $database }
+    if $do_things {
+      puts "Install:   $database in $installdir"
+      database_add $installdir $database
+    }
+    # Loop through files
+    #   sourcefile: the file in the target directory (source of the link)
+    #   destfile:   the file in the package (destination of the link)
     dict for {sourcefile v} $files {
       if [dict exists $v link] {
+        # For a link: create link sourcefile pointing to destfile
+        #   - if neither sourcefile nor destfile exists, skip
+        #   - if destfile does not exists: move sourcefile to destfile
+        #   - if sourcefile does not exists: create it
+        #   - if sourcefile is a link, check it points to the right path
+        #   - if sourcefile is a plain file, we can't do anything
         set destfile [dict get $v link]
-        set n_target [file normalize $destfile]
-        if { ! [file exists $destfile] } {
-          if [file exists $sourcefile] {
-            puts "Move:     $sourcefile -> $destfile"
-            if $do_things {
-              file mkdir [file dirname $destfile]
-              file rename $sourcefile $destfile
-            }
-          } else {
-            continue
+        set sourcefile_exists [file exists $sourcefile]
+        if { ! [file exists $destfile] && ! $sourcefile_exists } {
+          continue
+        }
+        if { ! [file exists $destfile] && $sourcefile_exists } {
+          puts "Move:      $sourcefile -> $destfile"
+          set sourcefile_exists 0
+          if $do_things {
+            file mkdir [file dirname $destfile]
+            file rename $sourcefile $destfile
           }
         }
-        if { ! [catch {set srctarget [file link $sourcefile]}]} then {
-          set srctarget [file join [file dirname $sourcefile] $srctarget]
-          set n_srctarget [file normalize $srctarget]
-          if { $n_srctarget != $n_target} {
-            puts "Existing: $sourcefile -> $destfile"
-          }
-          # else the link is already ok
-        } elseif [file exists $sourcefile] {
-          puts "Existing: $sourcefile"
-        } else {
+        if { ! $sourcefile_exists } {
           set sourcetarget [get_link_target $sourcefile $destfile]
-          puts "Create:   $sourcefile -> $sourcetarget"
+          puts "Create:    $sourcefile -> $sourcetarget"
           if $do_things {
             file mkdir [file dirname $sourcefile]
             file link $sourcefile $sourcetarget
           }
+        } elseif { ! [catch {set srctarget [file link $sourcefile]}]} then {
+          # We did not catch an error, sourcefile is a link
+          set n_srctarget [file normalize [file join [file dirname $sourcefile] $srctarget]]
+          if { $n_srctarget != [file normalize $destfile]} {
+            puts "Existing:  $sourcefile -> $srctarget"
+          }
+        } elseif [file exists $sourcefile] {
+          # We did catch an eror: it is a plain file
+          puts "Existing:  $sourcefile"
         }
       } elseif [dict exists $v copy] {
+        # For a copy: copy destfile to sourcefile
         set destfile [dict get $v copy]
-        set n_target [file normalize $destfile]
         if { ! [file exists $sourcefile] } {
-          puts "Copy:     $destfile -> $sourcefile"
-          file copy $n_target $sourcefile
+          puts "Copy:      $destfile -> $sourcefile"
+          if $do_things {
+            file copy [file normalize $destfile] $sourcefile
+          }
         }
       }
+    }
+  }
+  
+  
+  uninstall {
+    set do_things 1
+    for {set i 1} {$i < [llength $argv]} {incr i} {
+      set arg [lindex $argv $i]
+      switch -exact -- $arg {
+        -v      { incr verbose }
+        -t      { incr i 1 ; set installdir [file normalize [lindex $argv $i]] }
+        -n      { set do_things  0 }
+        default { set database   $arg }
+      }
+    }
+    read_database $database
+    # Loop through files
+    #   sourcefile: the file in the target directory (source of the link)
+    #   destfile:   the file in the package (destination of the link)
+    dict for {sourcefile v} $files {
+      if [dict exists $v link] {
+        # For a link: create link sourcefile pointing to destfile
+        #   - if sourcefile does not exists: don't do anything
+        #   - if sourcefile is a plain file: don't do anything
+        #   - if sourcefile is a link, check it points to the right path
+        set destfile [dict get $v link]
+        if { ! [file exists $sourcefile] } then {
+          puts "Missing:   $sourcefile"
+        } elseif { [catch {set srctarget [file link $sourcefile]}]} then {
+          # We did catch an eror: it is a plain file
+          puts "Leave:     $sourcefile"
+        } else {
+          # We did not catch an error, sourcefile is a link
+          set n_srctarget [file normalize [file join [file dirname $sourcefile] $srctarget]]
+          if { $n_srctarget == [file normalize $destfile]} {
+            puts "Remove:    $sourcefile -> $srctarget"
+            if $do_things {
+              file delete $sourcefile
+            }
+          } else {
+            puts "Leave:     $sourcefile -> $srctarget"
+          }
+        }
+      }
+    }
+    if $do_things {
+      puts "Uninstall: $database from $installdir"
+      database_del $installdir $database
     }
   }
   
@@ -232,8 +308,9 @@ switch -exact -- [lindex $argv 0] {
     for {set i 1} {$i < [llength $argv]} {incr i} {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
+        -v      { incr verbose }
+        -t      { incr i 1 ; set installdir [file normalize [lindex $argv $i]] }
         -n      { set do_things  0 }
-        -t      { incr i 1 ; set installdir [lindex $argv $i] }
         default { set database   $arg }
       }
     }
@@ -257,8 +334,9 @@ switch -exact -- [lindex $argv 0] {
     for {set i 1} {$i < [llength $argv]} {incr i} {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
+        -v      { incr verbose }
+        -t      { incr i 1 ; set installdir [file normalize [lindex $argv $i]] }
         -a      { set list_all  1 }
-        -t      { incr i 1 ; set installdir [lindex $argv $i] }
         default { set database  $arg }
       }
     }
@@ -275,38 +353,41 @@ switch -exact -- [lindex $argv 0] {
   
   
   list {
-    set do_things 1
     set raw 0
     for {set i 1} {$i < [llength $argv]} {incr i} {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
-        -t      { incr i 1 ; set installdir [lindex $argv $i] }
+        -v      { incr verbose }
+        -t      { incr i 1 ; set installdir [file normalize [lindex $argv $i]] }
         -r      { set raw 1 }
         default { set database  $arg }
       }
     }
     read_database $database
     if $raw {
-      puts $files
+      puts [list $databases $files]
     } else {
-
+      dict for {dbfile v} $databases {
+        puts "Database:  $dbfile"
+        dict for {f v2} $v {
+          puts "  - $f"
+        }
+      }
       dict for {sourcefile v} $files {
         if [dict exists $v noisy] {
-          puts "Noisy:    $sourcefile"
+          puts "Noisy:     $sourcefile"
         }
         if [dict exists $v ignore] {
-          puts "Ignore:   $sourcefile"
+          puts "Ignore:    $sourcefile"
         }
         if [dict exists $v link] {
           set destfile [dict get $v link]
-          set n_target [file normalize $destfile]
           set sourcetarget [get_link_target $sourcefile $destfile]
-          puts "Link:     $sourcefile -> $sourcetarget"
+          puts "Link:      $sourcefile -> $sourcetarget ($destfile)"
         }
         if [dict exists $v copy] {
           set destfile [dict get $v copy]
-          set n_target [file normalize $destfile]
-          puts "Copy:     $sourcefile <- $destfile"
+          puts "Copy:      $sourcefile <- $destfile"
         }
       }
     }
@@ -319,7 +400,8 @@ switch -exact -- [lindex $argv 0] {
     for {set i 1} {$i < [llength $argv]} {incr i} {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
-        -t      { incr i 1 ; set installdir [lindex $argv $i] }
+        -v      { incr verbose }
+        -t      { incr i 1 ; set installdir [file normalize [lindex $argv $i]] }
         default { set database  $arg }
       }
     }
@@ -340,7 +422,7 @@ switch -exact -- [lindex $argv 0] {
     for {set i 1} {$i < [llength $argv]} {incr i} {
       set arg [lindex $argv $i]
       switch -exact -- $arg {
-        -v      { set verbose   1 }
+        -v      { incr verbose }
         -t      { incr i 1 ; set installdir [lindex $argv $i] }
         default { set database  $arg }
       }
@@ -362,27 +444,40 @@ switch -exact -- [lindex $argv 0] {
     puts "    install \[OPTS\] \[DATABASE\]"
     puts "    link    \[OPTS\] \[DATABASE\]"
     puts "        Create links from the current directory to the directory"
-    puts "        of the database of the link files"
+    puts "        of the database of the link files. Add DATABASE to"
+    puts "        TARGETDIR/.fixdir"
     puts "        -n  don't do anything"
+    puts "        -v  verbose mode"
+    puts "        -t  TARGETDIR"
+    puts ""
+    puts "    uninstall \[OPTS\] \[DATABASE\]"
+    puts "        Remove links that belongs to DATABASE from the TARGETDIR."
+    puts "        Remove DATABASE from TARGETDIR/.fixdir"
+    puts "        -n  don't do anything"
+    puts "        -v  verbose mode"
     puts "        -t  TARGETDIR"
     puts ""
     puts "    clean \[OPTS\] \[DATABASE\]"
     puts "        Delete noisy files"
     puts "        -n  only list existing noisy files, like noisy"
+    puts "        -v  verbose mode"
     puts "        -t  TARGETDIR"
     puts ""
     puts "    noisy \[OPTS\] \[DATABASE\]"
     puts "        List existing noisy files"
     puts "        -a  list all noisy files, even those that don't exist"
+    puts "        -v  verbose mode"
     puts "        -t  TARGETDIR"
     puts ""
     puts "    list \[OPTS\] \[DATABASE\]"
     puts "        List the content of the database"
     puts "        -r  raw"
+    puts "        -v  verbose mode"
     puts "        -t  TARGETDIR"
     puts ""
     puts "    unknown \[OPTS\] \[DATABASE\]"
     puts "        List unknown files in the current directory"
+    puts "        -v  verbose mode"
     puts "        -t  TARGETDIR"
     puts ""
     puts "    run \[OPTS\] \[DATABASE\]"
@@ -408,6 +503,12 @@ switch -exact -- [lindex $argv 0] {
     puts ""
     puts "    ignore F"
     puts "        ignore F in all actions. Don't list it in the unknown files."
+    puts ""
+    puts "    $pkgdir"
+    puts "        package directory"
+    puts ""
+    puts "    $installdir"
+    puts "        installation directory"
     puts ""
   }
 }
