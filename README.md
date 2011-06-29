@@ -39,3 +39,4 @@ Bugs
 
 * fixdir list doesn't work when pwd != target directory
 
+* packages don't install well when pwd != pkgdir
