@@ -31,6 +31,9 @@ What else can it do?
 
 `fixdir clean` remove files declared as noisy
 
+Install packages: `fixdir install <package directory>` (use `-n` switch to show
+what it will do)
+
 Bugs
 ====
 
