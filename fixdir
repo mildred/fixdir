@@ -73,8 +73,8 @@ proc db_database {ip dbfile} {
     set database $dbfile
     set databasedir [file dirname $database]
     if $verbose { puts [list database $installed] }
-    interp eval $ip set pkgdir $databasedir
-    interp eval $ip set installdir $installdir
+    interp eval $ip set pkgdir [file normalize $databasedir]
+    interp eval $ip set installdir [file normalize $installdir]
     interp eval $ip source $dbfile
     set database $old_database
     set databasedir [file dirname $database]
@@ -225,6 +225,7 @@ switch -exact -- [lindex $argv 0] {
         set destfile [dict get $v link]
         set sourcefile_exists [file exists $sourcefile]
         if { ! [file exists $destfile] && ! $sourcefile_exists } {
+          puts "Missing:   $destfile"
           continue
         }
         if { ! [file exists $destfile] && $sourcefile_exists } {

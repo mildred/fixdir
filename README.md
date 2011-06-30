@@ -34,9 +34,3 @@ What else can it do?
 Install packages: `fixdir install <package directory>` (use `-n` switch to show
 what it will do)
 
-Bugs
-====
-
-* fixdir list doesn't work when pwd != target directory
-
-* packages don't install well when pwd != pkgdir
