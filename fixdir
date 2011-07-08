@@ -6,6 +6,7 @@ set database    ""
 set databasedir ""
 set installdir  $env(HOME)
 set databases   ""
+set hooks       {pre-install {}}
 
 proc db_link {ip a b {c ""}} {
   global files verbose databasedir installdir database databases
@@ -55,6 +56,11 @@ proc db_ignore {ip a} {
     if $verbose { puts [list ignore $installed] }
   }
 }
+proc db_hook {ip hook code} {
+  global hooks verbose
+  dict lappend hooks $hook [list $code $ip]
+  if $verbose { puts [list hook $hook] }
+}
 proc db_database {ip dbfile} {
   global database databasedir installdir verbose files databases
   if [file isdirectory $dbfile] {
@@ -67,8 +73,8 @@ proc db_database {ip dbfile} {
     set database $dbfile
     set databasedir [file dirname $database]
     if $verbose { puts [list database $installed] }
-    interp eval $ip set pkgdir $databasedir
-    interp eval $ip set installdir $installdir
+    interp eval $ip set pkgdir [file normalize $databasedir]
+    interp eval $ip set installdir [file normalize $installdir]
     interp eval $ip source $dbfile
     set database $old_database
     set databasedir [file dirname $database]
@@ -81,6 +87,7 @@ proc read_database {database} {
   interp alias $i copy     {} db_copy     $i
   interp alias $i noisy    {} db_noisy    $i
   interp alias $i ignore   {} db_ignore   $i
+  interp alias $i hook     {} db_hook     $i
   interp alias $i database {} db_database $i
   if { $database == "" } { set database "." }
   db_database $i $database
@@ -198,6 +205,11 @@ switch -exact -- [lindex $argv 0] {
     if $do_things {
       puts "Install:   $database in $installdir"
       database_add $installdir $database
+      foreach hook [dict get $hooks pre-install] {
+        set code [lindex $hook 0]
+        set ip   [lindex $hook 1]
+        interp eval $ip $code
+      }
     }
     # Loop through files
     #   sourcefile: the file in the target directory (source of the link)
@@ -213,6 +225,7 @@ switch -exact -- [lindex $argv 0] {
         set destfile [dict get $v link]
         set sourcefile_exists [file exists $sourcefile]
         if { ! [file exists $destfile] && ! $sourcefile_exists } {
+          puts "Missing:   $destfile"
           continue
         }
         if { ! [file exists $destfile] && $sourcefile_exists } {

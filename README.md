@@ -31,8 +31,6 @@ What else can it do?
 
 `fixdir clean` remove files declared as noisy
 
-Bugs
-====
-
-* fixdir list doesn't work when pwd != target directory
+Install packages: `fixdir install <package directory>` (use `-n` switch to show
+what it will do)
 
