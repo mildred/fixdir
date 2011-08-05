@@ -1,0 +1,67 @@
+[user]
+        name = Mildred Ki'Lya
+        email = silkensedai@online.fr
+        signingkey = 9A7D2E2B
+[alias]
+        # cat = show REV:full/path/file
+        ls = ls-files
+        ciflag = commit --allow-empty
+        ci = commit
+        co = checkout
+        st = status
+        df = diff
+        mg = merge
+        bl = blame
+        bltool = gui blame
+        fast-forward = merge --ff-only
+        ff = merge --ff-only
+        dft = difftool
+        mgt = mergetool
+        logf = log --name-status
+        w = help -w
+        br = branch
+        sh = show --pretty=raw
+        unadd = rm --cached
+        local-serve = !gitjour serve .
+        local-list = !gitjour list
+        local-remote-add = !gitjour remote
+        k = !gitk
+        mark-unchanged = update-index --assume-unchanged
+        unmark-unchanged = update-index --no-assume-unchanged
+	marked-unchanged = !git ls-files -v | grep '^[hsmrck?]'
+	mu = update-index --assume-unchanged
+[merge]
+	tool = meld
+	conflictstyle = diff3
+[pack]
+	threads = 0
+[diff]
+        # detect more renames
+        renamelimit = 0
+[branch]
+        # Make tracking branch automatically
+        autosetupmerge = true
+[color]
+	ui = auto
+[color "branch"]
+        current = black green bold
+        local = green bold
+        remote = red bold
+[color "diff"]
+        old = red bold
+        new = green bold
+[color "status"]
+        added = green bold
+        changed = cyan bold
+        untracked = red bold
+[rerere]
+	enabled = true
+[apply]
+	ignorewhitespace = change
+[core]
+	editor = leafpad
+[sendemail]
+        smtpencryption = tls
+        smtpserver = smtp.gmail.com
+        smtpuser = mildred593@gmail.com
+        smtpserverport = 587

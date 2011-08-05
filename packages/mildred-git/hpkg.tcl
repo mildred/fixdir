@@ -1,0 +1,1 @@
+link ".gitconfig" "gitconfig"
