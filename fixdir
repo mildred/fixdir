@@ -222,13 +222,36 @@ switch -exact -- [lindex $argv 0] {
         #   - if sourcefile does not exists: create it
         #   - if sourcefile is a link, check it points to the right path
         #   - if sourcefile is a plain file, we can't do anything
+        
         set destfile [dict get $v link]
+        set destfile_exists [file exists $destfile]
         set sourcefile_exists [file exists $sourcefile]
-        if { ! [file exists $destfile] && ! $sourcefile_exists } {
+        set sourcelink ""
+        if { ! [catch {set sourcelink [file link $sourcefile]}]} then {
+          set sourcelink_exists 1
+        } else {
+          set sourcelink_exists 0
+        }
+        
+        # destfile_exists:   if destfile exists
+        # sourcefile_exists: if sourcefile is a file, broken link counts as not existing
+        # sourcelink:        symbolic target for sourcefile if sourcefile is a link
+        # sourcelink_exists: if sourcefile is a link
+
+        #
+        # NONE EXISTS
+        # -> continue
+        #
+        if { !$destfile_exists && ! $sourcefile_exists } {
           puts "Missing:   $destfile"
           continue
         }
-        if { ! [file exists $destfile] && $sourcefile_exists } {
+        
+        #
+        # ONLY THE SOURCEFILE EXISTS (or is a valid link)
+        # -> copy to the package
+        #
+        if { ! $destfile_exists && $sourcefile_exists } {
           puts "Move:      $sourcefile -> $destfile"
           set sourcefile_exists 0
           if $do_things {
@@ -236,19 +259,36 @@ switch -exact -- [lindex $argv 0] {
             file rename $sourcefile $destfile
           }
         }
+        
+        #
+        # THE SOURCEFILE DOESN'T EXISTS OR IS A BROKEN LINK
+        # -> install the link, replacing the broken link
+        #
         if { ! $sourcefile_exists } {
+          if { $sourcelink_exists } {
+            puts "Broken:    $sourcefile -> $sourcelink"
+            file delete $sourcefile
+          }
           set sourcetarget [get_link_target $sourcefile $destfile]
           puts "Create:    $sourcefile -> $sourcetarget"
           if $do_things {
             file mkdir [file dirname $sourcefile]
             file link $sourcefile $sourcetarget
           }
-        } elseif { ! [catch {set srctarget [file link $sourcefile]}]} then {
+        #
+        # THE SOURCEFILE IS A VALID LINK
+        # -> leave it
+        #
+        } elseif { $sourcelink_exists } then {
           # We did not catch an error, sourcefile is a link
           set n_srctarget [file normalize [file join [file dirname $sourcefile] $srctarget]]
           if { $n_srctarget != [file normalize $destfile]} {
             puts "Existing:  $sourcefile -> $srctarget"
           }
+        #
+        # THE SOURCEFILE IS A FILE
+        # -> leave it
+        #
         } elseif [file exists $sourcefile] {
           # We did catch an eror: it is a plain file
           puts "Existing:  $sourcefile"
