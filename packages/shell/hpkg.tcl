@@ -1,4 +1,4 @@
 
-link -in ".config/shell" [glob [file join $pkgdir ".shell/*"]]
-link -in ".local/bin"    [glob [file join $pkgdir ".local/bin/*"]]
+link -in ".config/shell" [glob [file join $pkgdir "shell/*"]]
+link -in ".local/bin"    [glob [file join $pkgdir "local/bin/*"]]
 

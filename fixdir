@@ -248,15 +248,20 @@ switch -exact -- [lindex $argv 0] {
         }
         
         #
-        # ONLY THE SOURCEFILE EXISTS (or is a valid link)
-        # -> copy to the package
+        # ONLY THE SOURCEFILE EXISTS AND IS NOT A LINK
+        # -> copy to the package if it is not a link
         #
         if { ! $destfile_exists && $sourcefile_exists } {
-          puts "Move:      $sourcefile -> $destfile"
-          set sourcefile_exists 0
-          if $do_things {
-            file mkdir [file dirname $destfile]
-            file rename $sourcefile $destfile
+          if {$sourcelink_exists} {
+            puts "Missing:   $destfile"
+            puts "Exists:    $sourcefile -> $sourcelink"
+          } else {
+            puts "Move:      $sourcefile -> $destfile"
+            set sourcefile_exists 0
+            if $do_things {
+              file mkdir [file dirname $destfile]
+              file rename $sourcefile $destfile
+            }
           }
         }
         
@@ -281,9 +286,9 @@ switch -exact -- [lindex $argv 0] {
         #
         } elseif { $sourcelink_exists } then {
           # We did not catch an error, sourcefile is a link
-          set n_srctarget [file normalize [file join [file dirname $sourcefile] $srctarget]]
-          if { $n_srctarget != [file normalize $destfile]} {
-            puts "Existing:  $sourcefile -> $srctarget"
+          set n_sourcelink [file normalize [file join [file dirname $sourcefile] $sourcelink]]
+          if { $n_sourcelink != [file normalize $destfile]} {
+            puts "Existing:  $sourcefile -> $sourcelink"
           }
         #
         # THE SOURCEFILE IS A FILE
@@ -557,11 +562,19 @@ switch -exact -- [lindex $argv 0] {
     puts "    ignore F"
     puts "        ignore F in all actions. Don't list it in the unknown files."
     puts ""
-    puts "    $pkgdir"
-    puts "        package directory"
+    puts "    hook NAME CODE"
+    puts "        Run CODE at specified times. NAME can be pre-install only."
     puts ""
-    puts "    $installdir"
-    puts "        installation directory"
+    puts "    database DBFILE"
+    puts "        Run the DBFILE in the correct environment (with the variables"
+    puts "        set correctly)."
+    puts ""
+    puts "    \$pkgdir"
+    puts "        Package directory (dirname of DBFILE of the database command)"
+    puts ""
+    puts "    \$installdir"
+    puts "        Installation directory (TARGETDIR)."
+    puts "        Currently: $installdir"
     puts ""
   }
 }

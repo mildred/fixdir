@@ -1,0 +1,15 @@
+#! /bin/zsh
+# sourced in interactive shells. It should contain commands to set up aliases,
+# functions, options, key bindings, etc.
+
+## Read Generic RC
+rcfiles=(~/.config/shell/*.rc ~/.config/shell/*.rc.zsh)
+for rcfile in $rcfiles; do
+  if [ -r "$rcfile" ]; then
+    source "$rcfile"
+  fi
+done
+unset rcfile rcfiles
+
+##### ENF OF FILE #####
+

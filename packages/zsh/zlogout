@@ -1,0 +1,5 @@
+#! /bin/zsh
+# sourced when login shells exit.
+
+##### ENF OF FILE #####
+
