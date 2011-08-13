@@ -25,3 +25,4 @@ fi
 
 alias egrep='grep -E'
 alias pgrep='grep -P'
+alias rgrep="grep -ERn --exclude='*~' --color=auto"
