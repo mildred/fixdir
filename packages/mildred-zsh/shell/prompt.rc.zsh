@@ -15,10 +15,10 @@ local green="${esc}[32m"
 local blue="${esc}[0;34m"
 
 local color_isok="%(?.%{$green%}.%{$red%})"
-local retcode="%(?..(%{$bold$red%}%?%{$reset%}%) )"
+local retcode="%(?..%{$fg[yellow]%}(%{$red%}%B%?%b%{$fg[yellow]%}%) )"
 # %(!.#.$) to have '$' or '#' sign like bash / %# to have either '%' or '#'
-local id="$color_isok%B%n@%M%b%{$reset%}"
-local loc="%{$blue%}%B%2~%b%{$reset%}"
+local id="$color_isok%n@%M%{$reset%}"
+local loc="%{$blue%}%2~%{$reset%}"
 local hash="%(!.#.$)"
 
 export PS1="$id:$loc$hash "
