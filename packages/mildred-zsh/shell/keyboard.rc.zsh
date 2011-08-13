@@ -1,6 +1,7 @@
 zshrc-zkbd(){
 
   autoload zkbd
+  [[ -n $DISPLAY ]] && DISPLAY=X11
   zkbd_file=${ZDOTDIR:-$HOME}/.zkbd/$TERM-${DISPLAY:-$VENDOR-$OSTYPE}
   if [[ -f $zkbd_file ]]; then
     source $zkbd_file
