@@ -3,6 +3,7 @@
 # functions, options, key bindings, etc.
 
 ## Read Generic RC
+setopt no_nomatch
 rcfiles=(~/.config/shell/*.rc ~/.config/shell/*.rc.zsh)
 for rcfile in $rcfiles; do
   if [ -r "$rcfile" ]; then

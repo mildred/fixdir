@@ -5,7 +5,8 @@
 # assume the shell is attached to a tty.
 
 ## Read Generic ENV files
-envfiles=(~/.config/shell/*.env ~/.config/shell/*.env.zsh) 2>/dev/null
+setopt no_nomatch
+envfiles=(~/.config/shell/*.env ~/.config/shell/*.env.zsh)
 for envfile in $envfiles; do
   if [ -r "$envfile" ]; then
     source "$envfile"
