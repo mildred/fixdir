@@ -42,7 +42,8 @@ bindkey '^f'        history-search-backward # ctrl-f
 bindkey '^U'        history-search-forward  # ctrl-shift-f
 bindkey '^x'        push-line-or-edit       # ctrl-x
 bindkey '^u'        undo                    # ctrl-u
-
+bindkey '^[[5;3~'   history-search-backward # alt-pgup
+bindkey '^[[6;3~'   history-search-forward  # alt-pgdn
 
 
 case ${TERMINAL_EMULATOR:-$TERM} in
