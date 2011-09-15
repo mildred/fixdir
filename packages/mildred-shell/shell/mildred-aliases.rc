@@ -45,7 +45,14 @@ E(){
 }
 
 e(){
-  s gedit "$@"
+  local first="$1"
+  local line_col=
+  shift
+  line_col="$(sed -re 's/^(.*):([0-9]+:[0-9]+):?$/\2/' -e t -e 's/^(.*):([0-9]+):?$/\2/' <<<"$first")"
+  [[ "$line_col" = "$first" ]] && line_col=
+  first="$(sed    -re 's/^(.*):([0-9]+:[0-9]+):?$/\1/' -e t -e 's/^(.*):([0-9]+):?$/\1/' <<<"$first")"
+  [[ -n "$line_col" ]] && line_col="+$line_col"
+  s gedit "$first" "$@" $line_col
 }
 
 fm(){
@@ -181,8 +188,16 @@ composing-disable(){
 }
 
 flv(){
-  (ls -l /proc/$(pgrep plugin-cont)/fd/* ; ls -l /tmp/FlashXX* 2>/dev/null) | grep FlashXX | awk '{print $9}'
+  #(ls -l /proc/$(pgrep plugin-cont)/fd/* ; ls -l /tmp/FlashXX* 2>/dev/null) | grep FlashXX | awk '{print $9}'
   # lsof -p $(pgrep plugin-cont) | grep FlashXX
   # echo "You can use the cp command directly" >&2
   echo "You can use ln -L" >&2
+  ls -l /proc/$(pgrep plugin-cont)/fd/* | grep FlashXX | awk '{print $9}'
+}
+
+ac-cvs-check-off(){
+  ssh province.eu.adacore.com touch .no_cvs_check
+}
+ac-cvs-check-on(){
+  ssh province.eu.adacore.com rm -f .no_cvs_check
 }
