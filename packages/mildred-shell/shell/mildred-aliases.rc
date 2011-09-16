@@ -17,6 +17,7 @@ alias ssync="rsync --rsh=ssh"
 alias grep='grep --exclude="*~" --color=auto'
 alias egrep='egrep --exclude="*~" --color=auto'
 alias fgrep='fgrep --exclude="*~" --color=auto'
+alias sshfs='sshfs -o ServerAliveInterval=15 -o reconnect'
 
 xreset(){
   if [ -n "$HOSTNAME" ]; then
