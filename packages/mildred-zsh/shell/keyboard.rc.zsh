@@ -1,7 +1,7 @@
 zshrc-zkbd(){
 
   autoload zkbd
-  if [[ -n $DISPLAY ]]; then
+  if [[ -n "$DISPLAY" ]]; then
     zkbd_file=${ZDOTDIR:-$HOME}/.zkbd/$TERM-X11
   else
     zkbd_file=${ZDOTDIR:-$HOME}/.zkbd/$TERM-$VENDOR-$OSTYPE
@@ -11,7 +11,11 @@ zshrc-zkbd(){
   else
     echo "Missing key bindings: $zkbd_file"
     echo
-    DISPLAY=X11 zkbd
+    if [[ -n "$DISPLAY" ]]; then
+      DISPLAY=X11 zkbd
+    else
+      zkbd
+    fi
     if [[ ! -f $zkbd_file ]]; then
       echo "***"
       echo "*** ERROR: Missing file '$zkbd_file'"
