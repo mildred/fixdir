@@ -3,8 +3,8 @@
 function pathman {
     setopt extendedglob
     local append=false
-	PATH="${PATH:-}"
-	MANPATH="${MANPATH:-}"
+    PATH="${PATH:-}"
+    # MANPATH="${MANPATH:-}"
     if [[ "${1}" = '-a' ]]; then
         append=true
         shift
@@ -22,27 +22,28 @@ function pathman {
             PATH="${bindir}:${PATH}"
         fi
     fi
-    local mandir="${bindir/%\/[^\/]##\/#//man}"
-    if [[ -d "${mandir}" && ! "${MANPATH}" =~ "(^|:)${mandir}(\$|:)" ]]; then
-        if [[ -z "${MANPATH}" ]]; then
-            MANPATH="${mandir}"
-        elif [[ "${append}" = true ]]; then
-            MANPATH="${MANPATH}:${mandir}"
-        else
-            MANPATH="${mandir}:${MANPATH}"
-        fi
-    fi
-    local mandir="${bindir/%\/[^\/]##\/#//share/man}"
-    if [[ -d "${mandir}" && ! "${MANPATH}" =~ "(^|:)${mandir}(\$|:)" ]]; then
-        if [[ -z "${MANPATH}" ]]; then
-            MANPATH="${mandir}"
-        elif [[ "${append}" = true ]]; then
-            MANPATH="${MANPATH}:${mandir}"
-        else
-            MANPATH="${mandir}:${MANPATH}"
-        fi
-    fi
-    export MANPATH PATH
+    # local mandir="${bindir/%\/[^\/]##\/#//man}"
+    # if [[ -d "${mandir}" && ! "${MANPATH}" =~ "(^|:)${mandir}(\$|:)" ]]; then
+    #     if [[ -z "${MANPATH}" ]]; then
+    #         MANPATH="${mandir}"
+    #     elif [[ "${append}" = true ]]; then
+    #         MANPATH="${MANPATH}:${mandir}"
+    #     else
+    #         MANPATH="${mandir}:${MANPATH}"
+    #     fi
+    # fi
+    # local mandir="${bindir/%\/[^\/]##\/#//share/man}"
+    # if [[ -d "${mandir}" && ! "${MANPATH}" =~ "(^|:)${mandir}(\$|:)" ]]; then
+    #     if [[ -z "${MANPATH}" ]]; then
+    #         MANPATH="${mandir}"
+    #     elif [[ "${append}" = true ]]; then
+    #         MANPATH="${MANPATH}:${mandir}"
+    #     else
+    #         MANPATH="${mandir}:${MANPATH}"
+    #     fi
+    # fi
+    # export MANPATH
+    export PATH
 }
 
 # EOF

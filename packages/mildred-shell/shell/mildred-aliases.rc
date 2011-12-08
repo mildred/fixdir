@@ -53,6 +53,35 @@ e(){
   [[ "$line_col" = "$first" ]] && line_col=
   first="$(sed    -re 's/^(.*):([0-9]+:[0-9]+):?$/\1/' -e t -e 's/^(.*):([0-9]+):?$/\1/' <<<"$first")"
   [[ -n "$line_col" ]] && line_col="+$line_col"
+  if [[ ! -e "$first" ]]; then
+    case "$first" in
+      *.sh)
+        echo "#!/bin/sh" >>"$first"
+        chmod +x "$first"
+        ;;
+      *.pl)
+        echo "#!/usr/bin/env perl" >>"$first"
+        chmod +x "$first"
+        ;;
+      *.py)
+        echo "#!/usr/bin/env python" >>"$first"
+        chmod +x "$first"
+        ;;
+      *.rb)
+        echo "#!/usr/bin/env ruby" >>"$first"
+        chmod +x "$first"
+        ;;
+      *.lua)
+        echo "#!/usr/bin/env lua" >>"$first"
+        chmod +x "$first"
+        ;;
+      *.io)
+        echo "#!/usr/bin/env io" >>"$first"
+        chmod +x "$first"
+        ;;
+      *) ;;
+    esac
+  fi
   s gedit "$first" "$@" $line_col
 }
 
@@ -129,6 +158,7 @@ wine-rebase(){
   else
     export WINEPREFIX="`pwd`"
   fi
+  echo WINEPREFIX=$WINEPREFIX
 }
 
 
