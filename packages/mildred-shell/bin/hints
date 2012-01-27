@@ -4,4 +4,6 @@ Useful Commands
 ===============
 
 fdupes: find duplicate files by content
+lsof: find which program uses a given file
+picocom -l -b 115200 /dev/ttyUSB0: open a serial port
 

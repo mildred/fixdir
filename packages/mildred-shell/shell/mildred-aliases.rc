@@ -18,6 +18,7 @@ alias grep='grep --exclude="*~" --color=auto'
 alias egrep='egrep --exclude="*~" --color=auto'
 alias fgrep='fgrep --exclude="*~" --color=auto'
 alias sshfs='sshfs -o ServerAliveInterval=15 -o reconnect'
+alias pcom='picocom -l -b 115200'
 
 xreset(){
   if [ -n "$HOSTNAME" ]; then
