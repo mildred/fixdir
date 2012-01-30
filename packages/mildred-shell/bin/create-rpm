@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# it is now possible to use FPM to generate .rpm, .deb and much more
+# http://www.semicomplete.com/blog/geekery/fpm.html
+# http://jtimberman.posterous.com/debianubuntu-package-for-ruby-192-with-fpm
+
 error(){
   echo "$@" >&2
   exit 1
