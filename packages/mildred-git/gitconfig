@@ -1,6 +1,6 @@
 [user]
-        name = Mildred Ki'Lya
-        email = silkensedai@online.fr
+        name = Shanti Bouchez
+        email = shanti@sogilis.com
         signingkey = 9A7D2E2B
 [alias]
         # cat = show REV:full/path/file
@@ -17,7 +17,9 @@
         ff = merge --ff-only
         dft = difftool
         mgt = mergetool
-        logf = log --name-status
+        lg = log --graph --decorate
+        logf = log --graph --decorate --name-status
+        logs = log --graph --decorate --pretty=oneline --abbrev-commit
         w = help -w
         br = branch
         sh = show --pretty=raw
@@ -28,13 +30,13 @@
         k = !gitk
         mark-unchanged = update-index --assume-unchanged
         unmark-unchanged = update-index --no-assume-unchanged
-	marked-unchanged = !git ls-files -v | grep '^[hsmrck?]'
-	mu = update-index --assume-unchanged
+        marked-unchanged = !git ls-files -v | grep '^[hsmrck?]'
+        mu = update-index --assume-unchanged
 [merge]
-	tool = meld
-	conflictstyle = diff3
+        tool = meld
+        conflictstyle = diff3
 [pack]
-	threads = 0
+        threads = 0
 [diff]
         # detect more renames
         renamelimit = 0
@@ -42,7 +44,7 @@
         # Make tracking branch automatically
         autosetupmerge = true
 [color]
-	ui = auto
+        ui = auto
 [color "branch"]
         current = black green bold
         local = green bold
@@ -55,13 +57,13 @@
         changed = cyan bold
         untracked = red bold
 [rerere]
-	enabled = true
+        enabled = true
 [apply]
-	ignorewhitespace = change
+        ignorewhitespace = change
 [core]
-	editor = leafpad
+        editor = leafpad
 [sendemail]
         smtpencryption = tls
-        smtpserver = smtp.gmail.com
-        smtpuser = mildred593@gmail.com
-        smtpserverport = 587
+        smtpserver = smtp.mildred.fr
+        smtpuser = mildred@mildred.fr
+
