@@ -19,6 +19,7 @@
         mgt = mergetool
         lg = log --graph --decorate
         logf = log --graph --decorate --name-status
+        l = log --graph --decorate --pretty=oneline --abbrev-commit
         logs = log --graph --decorate --pretty=oneline --abbrev-commit
         w = help -w
         br = branch
