@@ -1,6 +1,6 @@
 [user]
-        name = Shanti Bouchez
-        email = shanti@sogilis.com
+        name = Mildred Ki'Lya
+        email = mildred-pub.git@mildred.fr
         signingkey = 9A7D2E2B
 [alias]
         # cat = show REV:full/path/file
@@ -68,3 +68,5 @@
         smtpserver = smtp.mildred.fr
         smtpuser = mildred@mildred.fr
 
+[push]
+	default = simple

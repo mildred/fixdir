@@ -19,6 +19,7 @@ alias egrep='egrep --exclude="*~" --color=auto'
 alias fgrep='fgrep --exclude="*~" --color=auto'
 alias sshfs='sshfs -o ServerAliveInterval=15 -o reconnect'
 alias pcom='picocom -l -b 115200'
+alias pcom-root='sudo picocom -l -b 115200'
 
 xreset(){
   if [ -n "$HOSTNAME" ]; then
@@ -223,8 +224,11 @@ flv(){
   #(ls -l /proc/$(pgrep plugin-cont)/fd/* ; ls -l /tmp/FlashXX* 2>/dev/null) | grep FlashXX | awk '{print $9}'
   # lsof -p $(pgrep plugin-cont) | grep FlashXX
   # echo "You can use the cp command directly" >&2
-  echo "You can use ln -L" >&2
-  ls -l /proc/$(pgrep plugin-cont)/fd/* | grep FlashXX | awk '{print $9}'
+  # echo "You can use ln -L" >&2
+  # ls -l /proc/$(pgrep plugin-cont)/fd/* | grep FlashXX | awk '{print $9}'
+  for pid in `pidof plugin-container`; do
+    ls -l /proc/$pid/fd/* | grep FlashXX | awk '{print $9}'
+  done
 }
 
 ac-cvs-check-off(){
