@@ -29,10 +29,10 @@
         local-list = !gitjour list
         local-remote-add = !gitjour remote
         k = !gitk
-        mark-unchanged = update-index --assume-unchanged
-        unmark-unchanged = update-index --no-assume-unchanged
-        marked-unchanged = !git ls-files -v | grep '^[hsmrck?]'
-        mu = update-index --assume-unchanged
+        ignore = update-index --assume-unchanged
+        unignore = update-index --no-assume-unchanged
+        ignored = !git ls-files -v | grep '^[hsmrck?]'
+        ig = update-index --assume-unchanged
 [merge]
         tool = meld
         conflictstyle = diff3

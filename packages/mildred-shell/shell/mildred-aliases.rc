@@ -232,8 +232,8 @@ flv(){
 }
 
 ac-cvs-check-off(){
-  ssh province.eu.adacore.com touch .no_cvs_check
+  ssh git.eu.adacore.com touch .no_cvs_check
 }
 ac-cvs-check-on(){
-  ssh province.eu.adacore.com rm -f .no_cvs_check
+  ssh git.eu.adacore.com rm -f .no_cvs_check
 }
