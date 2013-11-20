@@ -34,7 +34,7 @@
         ignored = !git ls-files -v | grep '^[hsmrck?]'
         ig = update-index --assume-unchanged
 [merge]
-        tool = meld
+        tool = kdiff3
         conflictstyle = diff3
 [pack]
         threads = 0
