@@ -58,7 +58,7 @@ rxvt-unicode)
     bindkey '^[[7~'     beginning-of-line       # begin
     bindkey '^[[8~'     end-of-line             # end
     ;;
-xterm|roxterm|gnome-terminal)
+xterm*|roxterm|gnome-terminal)
     bindkey '^[[3;5~'   delete-word             # ctrl-delete
     bindkey '^[[1;5D'   backward-word           # ctrl-left
     bindkey '^[[1;5C'   forward-word            # ctrl-right

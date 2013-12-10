@@ -24,3 +24,8 @@ local hash="%(!.#.$)"
 export PS1="$id:$loc$hash "
 export RPS1="$retcode%{$fg[yellow]%}%~%{$reset%}"
 
+case $TERM in
+    xterm*)
+        precmd () {print -Pn "\e]0;%n@%m: %2~\a"}
+        ;;
+esac

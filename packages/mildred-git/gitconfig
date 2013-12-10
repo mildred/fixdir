@@ -18,6 +18,7 @@
         dft = difftool
         mgt = mergetool
         lg = log --graph --decorate
+        up = sh -xc 'git stash && git pull "$@" && git stash pop' _
         logf = log --graph --decorate --name-status
         l = log --graph --decorate --pretty=oneline --abbrev-commit
         logs = log --graph --decorate --pretty=oneline --abbrev-commit
